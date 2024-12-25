@@ -35,7 +35,7 @@ torch._dynamo.config.suppress_errors = True
 # -----------------------------------------------------------------------------
 # default config values designed to train a gpt2 (124M) on OpenWebText
 # I/O
-out_dir = 'out'
+out_dir = 'out-shakespeare-char'
 eval_interval = 2000
 log_interval = 1
 eval_iters = 200
