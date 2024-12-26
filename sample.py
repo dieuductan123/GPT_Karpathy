@@ -13,6 +13,7 @@ init_from = 'resume' # either 'resume' (from an out_dir) or a gpt2 variant (e.g.
 out_dir = 'out' # ignored if init_from is not 'resume'
 start = "\n" # or "<|endoftext|>" or etc. Can also specify a file, use as: "FILE:prompt.txt"
 num_samples = 10 # number of samples to draw
+max_sentences = 4
 max_new_tokens = 500 # number of tokens generated in each sample
 temperature = 0.8 # 1.0 = no change, < 1.0 = less random, > 1.0 = more random, in predictions
 top_k = 200 # retain only the top_k most likely tokens, clamp others to have 0 probability
@@ -80,10 +81,24 @@ if start.startswith('FILE:'):
 start_ids = encode(start)
 x = (torch.tensor(start_ids, dtype=torch.long, device=device)[None, ...])
 
+# Generate samples
+def count_sentences(text):
+    """Count the number of sentences in a text."""
+    return sum(text.count(c) for c in [".", "!", "?"])
+
 # run generation
 with torch.no_grad():
     with ctx:
         for k in range(num_samples):
-            y = model.generate(x, max_new_tokens, temperature=temperature, top_k=top_k)
-            print(decode(y[0].tolist()))
+            generated_text = start
+            current_ids = start_ids
+            for _ in range(max_new_tokens):
+                y = model.generate(x, max_new_tokens, temperature=temperature, top_k=top_k)
+                new_token = decode(y[0][-1].tolist())
+                generated_text += new_token
+                current_ids += [y[0][-1].item()]
+                if max_sentences and count_sentences(generated_text) >= max_sentences:
+                    break
+            print(generated_text.strip())
+            #print(decode(y[0].tolist()))
             print('---------------')
